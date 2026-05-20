@@ -1,0 +1,11 @@
+name = "game-hub"
+main = "dist/index.js"
+compatibility_date = "2024-01-01"
+
+[env.production]
+name = "game-hub-prod"
+vars = { ENVIRONMENT = "production" }
+
+[env.development]
+name = "game-hub-dev"
+vars = { ENVIRONMENT = "development" }
