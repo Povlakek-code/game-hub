@@ -10,12 +10,15 @@ interface GameObject {
 }
 
 export class DodgeGame extends BaseGame {
-  private player: GameObject;
+  private player!: GameObject;
   private obstacles: GameObject[] = [];
   private gameOver = false;
   private obstacleSpawnRate = 0.02;
   private gameTime = 0;
   private difficulty = 1;
+  private boundKeyDown: ((event: KeyboardEvent) => void) | null = null;
+  private boundKeyUp: ((event: KeyboardEvent) => void) | null = null;
+  private boundTouchMove: ((event: TouchEvent) => void) | null = null;
 
   init() {
     this.player = {
@@ -32,22 +35,61 @@ export class DodgeGame extends BaseGame {
     this.gameTime = 0;
     this.difficulty = 1;
 
-    document.addEventListener('keydown', this.handleInput.bind(this));
-    document.addEventListener('keyup', this.handleKeyUp.bind(this));
+    this.boundKeyDown = (event: KeyboardEvent) => this.handleInput(event);
+    this.boundKeyUp = (event: KeyboardEvent) => this.handleKeyUp(event);
+    document.addEventListener('keydown', this.boundKeyDown);
+    document.addEventListener('keyup', this.boundKeyUp);
+    // 手机拖拽移动飞船
+    this.boundTouchMove = (event: TouchEvent) => {
+      const t = event.touches[0];
+      if (!t) return;
+      const { x } = this.toCanvasCoords(t.clientX, t.clientY);
+      this.player.x = Math.max(
+        0,
+        Math.min(x - this.player.width / 2, this.canvas.width - this.player.width)
+      );
+      event.preventDefault();
+    };
+    this.canvas.addEventListener('touchmove', this.boundTouchMove, { passive: false });
+  }
+
+  override destroy() {
+    if (this.boundKeyDown) {
+      document.removeEventListener('keydown', this.boundKeyDown);
+      this.boundKeyDown = null;
+    }
+    if (this.boundKeyUp) {
+      document.removeEventListener('keyup', this.boundKeyUp);
+      this.boundKeyUp = null;
+    }
+    if (this.boundTouchMove) {
+      this.canvas.removeEventListener('touchmove', this.boundTouchMove);
+      this.boundTouchMove = null;
+    }
+    super.destroy();
   }
 
   private handleKeyUp(event: KeyboardEvent) {
-    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+    if (
+      event.key === 'ArrowLeft' ||
+      event.key === 'ArrowRight' ||
+      event.key === 'a' ||
+      event.key === 'A' ||
+      event.key === 'd' ||
+      event.key === 'D'
+    ) {
       this.player.vx = 0;
     }
   }
 
   handleInput(event: KeyboardEvent) {
     const speed = 5;
-    if (event.key === 'ArrowLeft') {
+    if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
       this.player.vx = -speed;
-    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+    } else if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
       this.player.vx = speed;
+      event.preventDefault();
     }
   }
 

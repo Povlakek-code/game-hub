@@ -14,6 +14,10 @@ export class SnakeGame extends BaseGame {
   private gameSpeed = 0.1;
   private gameTime = 0;
   private gameOver = false;
+  private boundKeyHandler: ((event: KeyboardEvent) => void) | null = null;
+  private boundTouchStart: ((event: TouchEvent) => void) | null = null;
+  private boundTouchEnd: ((event: TouchEvent) => void) | null = null;
+  private touchStart: { x: number; y: number } | null = null;
 
   init() {
     const cols = Math.floor(this.canvas.width / this.gridSize);
@@ -29,13 +33,64 @@ export class SnakeGame extends BaseGame {
     this.gameTime = 0;
 
     this.generateFood();
-    document.addEventListener('keydown', this.handleInput.bind(this));
+    // 使用稳定的绑定引用，以便 destroy() 时能正确 removeEventListener
+    // （之前用 .bind(this) 每次创建新函数，导致监听器永远泄漏）
+    this.boundKeyHandler = (event: KeyboardEvent) => this.handleInput(event);
+    document.addEventListener('keydown', this.boundKeyHandler);
+    // 手机滑动改变方向
+    this.boundTouchStart = (event: TouchEvent) => {
+      const t = event.touches[0];
+      if (t) this.touchStart = { x: t.clientX, y: t.clientY };
+    };
+    this.boundTouchEnd = (event: TouchEvent) => {
+      const t = event.changedTouches[0];
+      if (t && this.touchStart) {
+        const dx = t.clientX - this.touchStart.x;
+        const dy = t.clientY - this.touchStart.y;
+        if (Math.abs(dx) > 20 || Math.abs(dy) > 20) {
+          // 只允许转向（不允许直接反向，避免瞬间撞到自己）
+          if (Math.abs(dx) > Math.abs(dy)) {
+            if (this.direction.x === 0) this.nextDirection = dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 };
+          } else if (this.direction.y === 0) {
+            this.nextDirection = dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 };
+          }
+        }
+      }
+      this.touchStart = null;
+    };
+    this.canvas.addEventListener('touchstart', this.boundTouchStart, { passive: true });
+    this.canvas.addEventListener('touchend', this.boundTouchEnd);
+  }
+
+  override destroy() {
+    if (this.boundKeyHandler) {
+      document.removeEventListener('keydown', this.boundKeyHandler);
+      this.boundKeyHandler = null;
+    }
+    if (this.boundTouchStart) this.canvas.removeEventListener('touchstart', this.boundTouchStart);
+    if (this.boundTouchEnd) this.canvas.removeEventListener('touchend', this.boundTouchEnd);
+    this.boundTouchStart = this.boundTouchEnd = null;
+    super.destroy();
   }
 
   private generateFood() {
     const cols = Math.floor(this.canvas.width / this.gridSize);
     const rows = Math.floor(this.canvas.height / this.gridSize);
 
+    // 避免食物刷在蛇身上（之前可能导致“吃不到食物”的假象）
+    for (let i = 0; i < 100; i++) {
+      const candidate = {
+        x: Math.floor(Math.random() * cols),
+        y: Math.floor(Math.random() * rows)
+      };
+      const onSnake = this.snake.some(
+        (segment) => segment.x === candidate.x && segment.y === candidate.y
+      );
+      if (!onSnake) {
+        this.food = candidate;
+        return;
+      }
+    }
     this.food = {
       x: Math.floor(Math.random() * cols),
       y: Math.floor(Math.random() * rows)
@@ -45,18 +100,26 @@ export class SnakeGame extends BaseGame {
   handleInput(event: KeyboardEvent) {
     switch (event.key) {
       case 'ArrowUp':
+      case 'w':
+      case 'W':
         if (this.direction.y === 0) this.nextDirection = { x: 0, y: -1 };
         event.preventDefault();
         break;
       case 'ArrowDown':
+      case 's':
+      case 'S':
         if (this.direction.y === 0) this.nextDirection = { x: 0, y: 1 };
         event.preventDefault();
         break;
       case 'ArrowLeft':
+      case 'a':
+      case 'A':
         if (this.direction.x === 0) this.nextDirection = { x: -1, y: 0 };
         event.preventDefault();
         break;
       case 'ArrowRight':
+      case 'd':
+      case 'D':
         if (this.direction.x === 0) this.nextDirection = { x: 1, y: 0 };
         event.preventDefault();
         break;

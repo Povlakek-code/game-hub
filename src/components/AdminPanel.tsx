@@ -17,6 +17,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onAddGa
     difficulty: 'medium',
     author: 'Custom',
     enabled: true,
+    instructions: '',
+    controls: '',
   });
 
   const [tagInput, setTagInput] = useState('');
@@ -37,6 +39,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onAddGa
       difficulty: 'medium',
       author: 'Custom',
       enabled: true,
+      instructions: '',
+      controls: '',
     });
     setTagInput('');
   };
@@ -125,7 +129,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onAddGa
             <select
               value={formData.difficulty}
               onChange={(e) =>
-                setFormData({ ...formData, difficulty: e.target.value as any })
+                setFormData({ ...formData, difficulty: e.target.value as GameConfig['difficulty'] })
               }
               className="w-full border-2 border-gray-300 rounded px-3 py-2 focus:border-blue-500 outline-none"
             >
@@ -143,6 +147,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, onAddGa
               onChange={(e) => setFormData({ ...formData, author: e.target.value })}
               className="w-full border-2 border-gray-300 rounded px-3 py-2 focus:border-blue-500 outline-none"
               placeholder="作者名称"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">玩法说明</label>
+            <textarea
+              value={formData.instructions ?? ''}
+              onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
+              className="w-full border-2 border-gray-300 rounded px-3 py-2 focus:border-blue-500 outline-none"
+              placeholder="游戏开始前展示给玩家看"
+              rows={2}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">操作提示</label>
+            <input
+              type="text"
+              value={formData.controls ?? ''}
+              onChange={(e) => setFormData({ ...formData, controls: e.target.value })}
+              className="w-full border-2 border-gray-300 rounded px-3 py-2 focus:border-blue-500 outline-none"
+              placeholder="如：方向键移动，空格跳跃"
             />
           </div>
 

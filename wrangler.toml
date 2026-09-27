@@ -1,11 +1,16 @@
+# Cloudflare Pages 部署的是 Vite 构建产物 dist/（纯静态站）。
+# 不要再用 Workers 的 `main = "dist/index.js"`（Vite 根本不会产出 index.js，只会产出 index.html + assets）。
+# 两种可用方式：
+#  1. Cloudflare Pages（推荐）：连接仓库，构建命令 npm run build，输出目录 dist，无需此文件也可部署。
+#  2. Wrangler Pages/local preview：`npx wrangler pages dev dist`
 name = "game-hub"
-main = "dist/index.js"
 compatibility_date = "2024-01-01"
 
+# 告诉 Wrangler Pages 构建产物目录（`wrangler pages deploy dist` 会用到）
+pages_build_output_dir = "dist"
+
 [env.production]
-name = "game-hub-prod"
 vars = { ENVIRONMENT = "production" }
 
 [env.development]
-name = "game-hub-dev"
 vars = { ENVIRONMENT = "development" }
